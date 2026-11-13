@@ -1,0 +1,8 @@
+# Real measurement data stays out of the repository; only data/sample/ is kept
+data/*
+!data/sample/
+
+# Python / Jupyter
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
