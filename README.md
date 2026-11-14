@@ -42,6 +42,15 @@ Python with pandas, numpy, scipy, matplotlib, pyarrow and Jupyter, e.g.:
 pip install pandas numpy scipy matplotlib pyarrow jupyterlab
 ```
 
+## Testing
+
+Small pytest suite for the shared module, using the files in `data/sample/`:
+
+```
+pip install pytest
+pytest
+```
+
 ## Data
 
 Real measurement data stays outside the repository (see `.gitignore`).

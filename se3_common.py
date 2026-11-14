@@ -109,8 +109,8 @@ def read_day(datapath, fname):
         df['Date'] + ' ' + df['Time'] + '.' + df['Ms'].str.zfill(3).str[1:],
         format='%d-%m-%Y %H:%M:%S.%f'
     )
-    df.drop(columns=['Date', 'Time', 'Ms'], inplace=True)
-    df.set_index('DateTime', inplace=True)
+    df = df.drop(columns=['Date', 'Time', 'Ms'])
+    df = df.set_index('DateTime')
     return df[data_columns]
 
 
