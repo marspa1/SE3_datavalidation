@@ -19,12 +19,36 @@ Handle sound data from SE3 measurements.
 The sampling rate is **8 Hz** (125 ms). Data files are per day and named
 `SE3-<id>-DD-MM-YYYY.csv`.
 
+Shared helpers for file handling, parsing and calibration live in
+`se3_common.py` and are used by both notebooks.
+
+## Calibration
+
+The calibration constant is entered as a history table, `cal_history` in
+`01_ingest_USBdata.ipynb`: one `(date, level in dB)` entry per field
+calibration. The constant changes **linearly between the entered dates**
+(first value before the first date, last value after the last date), which
+matches the typically fast drift from one level to another over days or
+weeks. The table is applied per sample at ingestion and passed to the
+analysis notebook via `calibration.json` in the aggregate folder, so both
+steps always use identical corrections. Update the table at each field
+calibration and rerun notebook 01.
+
 ## Requirements
 
 Python with pandas, numpy, scipy, matplotlib, pyarrow and Jupyter, e.g.:
 
 ```
 pip install pandas numpy scipy matplotlib pyarrow jupyterlab
+```
+
+## Testing
+
+Small pytest suite for the shared module, using the files in `data/sample/`:
+
+```
+pip install pytest
+pytest
 ```
 
 ## Data
