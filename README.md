@@ -64,3 +64,18 @@ with the same naming convention as the real measurement files. They are
 intended for testing the ingestion pipeline without access to the full
 data set. Rerun `01_ingest_USBdata.ipynb` on a sample directory to verify
 parsing, the 8 Hz sampling rate and the aggregation logic.
+
+### Parquet working copies
+
+The daily CSV files can be converted to zstd-compressed Parquet with
+
+```
+python convert_to_parquet.py <datapath> [--startdate YYYY-MM-DD] [--enddate YYYY-MM-DD]
+```
+
+On this data that gives ~5x smaller files (~30 MB/month instead of
+~150 MB) and ~30x faster loading. The original CSV files are left
+unchanged and remain the measurement record; the Parquet files are a
+working copy. `read_day` automatically prefers an existing `.parquet`
+file over the `.csv`, and `find_files` lists each day only once when
+both formats exist.

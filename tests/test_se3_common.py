@@ -1,5 +1,6 @@
 import datetime
 import os
+import shutil
 
 import numpy as np
 import pandas as pd
@@ -114,3 +115,45 @@ def test_hourly_aggregation_and_parquet_roundtrip(tmp_path, sample_files):
     hourly.to_parquet(os.path.join(tmp_path, 'hourly_stats.parquet'))
     reloaded = pd.read_parquet(os.path.join(tmp_path, 'hourly_stats.parquet'))
     pd.testing.assert_frame_equal(hourly, reloaded, check_freq=False)
+
+
+def test_convert_day_creates_equivalent_parquet(tmp_path, sample_files):
+    fname = sample_files[0]
+    shutil.copy(os.path.join(SAMPLE_DIR, fname), tmp_path)
+    csv_df = se3.read_day(tmp_path, fname)
+
+    pq_path = se3.convert_day(tmp_path, fname)
+    assert os.path.exists(pq_path)
+    pq_df = se3.read_day(tmp_path, fname)
+    pd.testing.assert_frame_equal(csv_df, pq_df, check_freq=False)
+
+
+def test_convert_day_is_idempotent(tmp_path, sample_files):
+    fname = sample_files[0]
+    shutil.copy(os.path.join(SAMPLE_DIR, fname), tmp_path)
+
+    pq_path = se3.convert_day(tmp_path, fname)
+    mtime = os.path.getmtime(pq_path)
+    assert se3.convert_day(tmp_path, fname) == pq_path
+    assert os.path.getmtime(pq_path) == mtime
+
+
+def test_read_day_prefers_parquet_over_csv(tmp_path, sample_files):
+    fname = sample_files[0]
+    shutil.copy(os.path.join(SAMPLE_DIR, fname), tmp_path)
+    se3.convert_day(tmp_path, fname)
+
+    os.remove(os.path.join(tmp_path, fname))
+    df = se3.read_day(tmp_path, fname)
+    assert df.index[0] == pd.Timestamp('2026-06-02 13:45:34.123')
+    assert list(df.columns) == se3.data_columns
+
+
+def test_find_files_lists_each_day_once_preferring_parquet(tmp_path, sample_files):
+    fname = sample_files[0]
+    shutil.copy(os.path.join(SAMPLE_DIR, fname), tmp_path)
+    assert se3.find_files(tmp_path) == [fname]
+
+    se3.convert_day(tmp_path, fname)
+    assert se3.find_files(tmp_path) == [
+        os.path.splitext(fname)[0] + '.parquet']
