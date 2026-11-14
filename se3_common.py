@@ -16,8 +16,8 @@ import pandas as pd
 # Kolumner med ljudnivådata i SE3-filerna
 data_columns = ['LAF', 'LAeq1s', 'LAS', 'LCpeak']
 
-# Filnamnsmönster: SE3-<id>-DD-MM-YYYY.csv
-_filename_re = re.compile(r'SE3-[^-]+-(\d{2})-(\d{2})-(\d{4})\.csv')
+# Filnamnsmönster: SE3-<id>-DD-MM-YYYY.csv eller .parquet
+_filename_re = re.compile(r'SE3-[^-]+-(\d{2})-(\d{2})-(\d{4})\.(?:csv|parquet)')
 
 # Aktiv kalibreringshistorik (sätts med set_calibration)
 cal_history = []
@@ -83,8 +83,12 @@ def file_date(fname):
 
 
 def find_files(datapath, startdate=None, enddate=None):
-    """Sorterad lista med SE3-CSV-filer i datapath inom datumintervallet."""
-    filelist = []
+    """Sorterad lista med SE3-datafiler i datapath inom datumintervallet.
+
+    Om en dag finns i både CSV- och Parquet-format listas endast
+    Parquet-filen.
+    """
+    by_stem = {}
     for fname in os.listdir(datapath):
         fdate = file_date(fname)
         if fdate is None:
@@ -93,13 +97,24 @@ def find_files(datapath, startdate=None, enddate=None):
             continue
         if enddate is not None and fdate.date() > enddate:
             continue
-        filelist.append(fname)
-    filelist.sort()
-    return filelist
+        stem = os.path.splitext(fname)[0]
+        if (stem not in by_stem
+                or (fname.endswith('.parquet')
+                    and not by_stem[stem].endswith('.parquet'))):
+            by_stem[stem] = fname
+    return sorted(by_stem.values())
 
 
 def read_day(datapath, fname):
-    """Läs en dags datafil, returnera DataFrame med datetime-index."""
+    """Läs en dags datafil, returnera DataFrame med datetime-index.
+
+    En Parquet-fil med samma namn används om den finns, annars läses
+    CSV-filen.
+    """
+    stem = os.path.splitext(fname)[0]
+    pq_path = os.path.join(datapath, stem + '.parquet')
+    if os.path.exists(pq_path):
+        return pd.read_parquet(pq_path)[data_columns]
     df = pd.read_csv(
         os.path.join(datapath, fname),
         sep=';',
@@ -112,6 +127,20 @@ def read_day(datapath, fname):
     df = df.drop(columns=['Date', 'Time', 'Ms'])
     df = df.set_index('DateTime')
     return df[data_columns]
+
+
+def convert_day(datapath, fname, compression='zstd'):
+    """Konvertera en dags CSV-fil till Parquet, returnera Parquet-sökvägen.
+
+    Original-CSV-filen ändras inte. En redan existerande Parquet-fil med
+    samma namn skrivs inte över.
+    """
+    stem = os.path.splitext(fname)[0]
+    pq_path = os.path.join(datapath, stem + '.parquet')
+    if not os.path.exists(pq_path):
+        df = read_day(datapath, fname)
+        df.to_parquet(pq_path, compression=compression)
+    return pq_path
 
 
 def adjust_day(df, free_field_comp=0, dst_shifts=()):
