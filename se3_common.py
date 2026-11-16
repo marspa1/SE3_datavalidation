@@ -83,10 +83,11 @@ def file_date(fname):
 
 
 def find_files(datapath, startdate=None, enddate=None):
-    """Sorterad lista med SE3-datafiler i datapath inom datumintervallet.
+    """Kronologiskt sorterad lista med SE3-datafiler i datapath.
 
-    Om en dag finns i både CSV- och Parquet-format listas endast
-    Parquet-filen.
+    Filnamnen är SE3-<id>-DD-MM-YYYY.csv/.parquet — sortering på filnamnet
+    vore fel (dagen kommer först), så listan sorteras på fildatum. Om en
+    dag finns i både CSV- och Parquet-format listas endast Parquet-filen.
     """
     by_stem = {}
     for fname in os.listdir(datapath):
@@ -100,9 +101,9 @@ def find_files(datapath, startdate=None, enddate=None):
         stem = os.path.splitext(fname)[0]
         if (stem not in by_stem
                 or (fname.endswith('.parquet')
-                    and not by_stem[stem].endswith('.parquet'))):
-            by_stem[stem] = fname
-    return sorted(by_stem.values())
+                    and not by_stem[stem][1].endswith('.parquet'))):
+            by_stem[stem] = (fdate, fname)
+    return [fname for _, fname in sorted(by_stem.values())]
 
 
 def read_day(datapath, fname):

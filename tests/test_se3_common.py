@@ -157,3 +157,23 @@ def test_find_files_lists_each_day_once_preferring_parquet(tmp_path, sample_file
     se3.convert_day(tmp_path, fname)
     assert se3.find_files(tmp_path) == [
         os.path.splitext(fname)[0] + '.parquet']
+
+
+def test_find_files_sorts_chronologically_across_months(tmp_path):
+    names = [
+        'SE3-2009372275-15-11-2025.csv',
+        'SE3-2009372275-20-12-2025.csv',
+        'SE3-2009372275-05-01-2026.csv',
+        'SE3-2009372275-10-02-2026.csv',
+    ]
+    for n in names:
+        (tmp_path / n).touch()
+    assert se3.find_files(tmp_path) == names
+
+
+def test_find_files_chronological_with_parquet_copies(tmp_path):
+    csv_name = 'SE3-2009372275-05-01-2026.csv'
+    pq_name = 'SE3-2009372275-20-12-2025.parquet'
+    (tmp_path / csv_name).touch()
+    (tmp_path / pq_name).touch()
+    assert se3.find_files(tmp_path) == [pq_name, csv_name]
