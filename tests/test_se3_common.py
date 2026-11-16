@@ -177,3 +177,17 @@ def test_find_files_chronological_with_parquet_copies(tmp_path):
     (tmp_path / csv_name).touch()
     (tmp_path / pq_name).touch()
     assert se3.find_files(tmp_path) == [pq_name, csv_name]
+
+
+def test_find_files_sorts_chronologically_across_years(tmp_path):
+    names = [
+        'SE3-2009372275-30-12-2024.csv',
+        'SE3-2009372275-02-01-2025.csv',
+        'SE3-2009372275-15-11-2025.csv',
+        'SE3-2009372275-20-12-2025.parquet',
+        'SE3-2009372275-05-01-2026.csv',
+        'SE3-2009372275-10-02-2026.csv',
+    ]
+    for n in names:
+        (tmp_path / n).touch()
+    assert se3.find_files(tmp_path) == names
