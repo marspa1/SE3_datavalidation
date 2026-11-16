@@ -9,7 +9,11 @@ Handle sound data from SE3 measurements.
    computes:
    - hourly statistics: sample count and sum/max of 10^(LAF/10), the basis
      for exact LAeq/LAFmax values in the analysis step
-   - peaks: noisy passages detected with `find_peaks` on LAF
+   - peaks: local maxima detected with `find_peaks` on LAF, down to a low
+     detection floor (`peak_height_floor`); the threshold for "noisy
+     passages" is applied at analysis time, so the peak count for any
+     threshold above the floor is obtained by simply filtering the stored
+     peaks (peak height is a post-filter in `find_peaks`)
    - envelope: min/mean/max per 10 min for overview plots
    Results are saved as Parquet files.
 2. `02_analysis.ipynb` — reads the Parquet aggregates and does all analysis,

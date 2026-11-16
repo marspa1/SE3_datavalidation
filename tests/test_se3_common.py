@@ -191,3 +191,19 @@ def test_find_files_sorts_chronologically_across_years(tmp_path):
     for n in names:
         (tmp_path / n).touch()
     assert se3.find_files(tmp_path) == names
+
+
+def test_height_threshold_equals_post_filter():
+    from scipy.signal import find_peaks
+
+    rng = np.random.default_rng(7)
+    x = rng.normal(55, 6, 50000)
+    for c in rng.integers(100, 49500, 60):
+        x[c:c + 40] += rng.uniform(5, 25)
+
+    peaks_all, props = find_peaks(x, height=40, prominence=15, width=8)
+    assert len(peaks_all) > 0
+    for t in [50, 60, 70, 80]:
+        expected, _ = find_peaks(x, height=t, prominence=15, width=8)
+        got = peaks_all[props['peak_heights'] >= t]
+        assert np.array_equal(expected, got), t
