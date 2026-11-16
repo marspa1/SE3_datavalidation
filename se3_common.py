@@ -103,7 +103,11 @@ def find_files(datapath, startdate=None, enddate=None):
                 or (fname.endswith('.parquet')
                     and not by_stem[stem][1].endswith('.parquet'))):
             by_stem[stem] = (fdate, fname)
-    return [fname for _, fname in sorted(by_stem.values())]
+
+    # Sortera p datetime-objektet — aldrig p filnamnet, dr brjar
+    # dagen (DD-MM-YYYY) och månads-/årgränserna blir fel
+    filtered = sorted(by_stem.values(), key=lambda x: x[0])
+    return [fname for _, fname in filtered]
 
 
 def read_day(datapath, fname):
